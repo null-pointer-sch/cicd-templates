@@ -16,14 +16,19 @@ on:
         type: string
         description: "Artifact Registry Repository Name"
       image-tag:
-        required: true
+        required: false
         type: string
-        description: "Tag of the image to deploy (usually github.sha)"
+        description: "Tag of the image to deploy (usually github.sha). Optional if overridden in extra-tf-vars."
       working-directory:
         required: false
         type: string
         default: "terraform"
         description: "Path to the Terraform configuration directory"
+      extra-tf-vars:
+        required: false
+        type: string
+        default: ""
+        description: "Additional terraform variables in format: -var=\"key=value\" -var=\"key2=value2\""
     secrets:
       GCP_WIF_PROVIDER:
         required: true
@@ -31,6 +36,9 @@ on:
       GCP_SERVICE_ACCOUNT:
         required: true
         description: "Service Account"
+      DATABASE_URL:
+        required: false
+        description: "Optional Database URL variable passed to Terraform env"
 
 jobs:
   deploy-infra:
@@ -57,12 +65,21 @@ jobs:
 
       - name: Terraform Apply
         working-directory: ${{ inputs.working-directory }}
+        env:
+          TF_VAR_database_url: ${{ secrets.DATABASE_URL }}
         run: |
+          # If image-tag is provided, append it, otherwise omit it (assume extra-tf-vars has what we need)
+          IMAGE_VAR=""
+          if [ -n "${{ inputs.image-tag }}" ]; then
+            IMAGE_VAR="-var=\"image_tag=${{ inputs.image-tag }}\""
+          fi
+          
           terraform apply -auto-approve \
             -var="project_id=${{ inputs.project-id }}" \
             -var="region=${{ inputs.region }}" \
             -var="artifact_repo_id=${{ inputs.artifact-repo-id }}" \
-            -var="image_tag=${{ inputs.image-tag }}"
+            $IMAGE_VAR \
+            ${{ inputs.extra-tf-vars }}
 
       - name: Output Cloud Run URL
         working-directory: ${{ inputs.working-directory }}
