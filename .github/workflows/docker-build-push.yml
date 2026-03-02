@@ -30,6 +30,13 @@ on:
         type: string
         default: ""
         description: "Optional 'make' command to run before docker build (e.g., 'make setup && make run')"
+    secrets:
+      GCP_WIF_PROVIDER:
+        required: true
+        description: "Workload Identity Provider"
+      GCP_SERVICE_ACCOUNT:
+        required: true
+        description: "Service Account"
 
 jobs:
   build-image:

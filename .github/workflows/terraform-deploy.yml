@@ -24,6 +24,13 @@ on:
         type: string
         default: "terraform"
         description: "Path to the Terraform configuration directory"
+    secrets:
+      GCP_WIF_PROVIDER:
+        required: true
+        description: "Workload Identity Provider"
+      GCP_SERVICE_ACCOUNT:
+        required: true
+        description: "Service Account"
 
 jobs:
   deploy-infra:
