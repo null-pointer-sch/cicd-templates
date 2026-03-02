@@ -1,0 +1,74 @@
+name: Default Docker Build and Push
+
+on:
+  workflow_call:
+    inputs:
+      image-name:
+        required: true
+        type: string
+        description: "Name of the Docker image"
+      project-id:
+        required: true
+        type: string
+        description: "Google Cloud Project ID"
+      repo-name:
+        required: true
+        type: string
+        description: "Artifact Registry Repository Name"
+      region:
+        required: false
+        type: string
+        default: "europe-west1"
+        description: "Google Cloud Region for Artifact Registry (e.g., europe-west1)"
+      dockerfile-path:
+        required: false
+        type: string
+        default: "Dockerfile"
+        description: "Path to the Dockerfile"
+      setup-make-cmd:
+        required: false
+        type: string
+        default: ""
+        description: "Optional 'make' command to run before docker build (e.g., 'make setup && make run')"
+
+jobs:
+  build-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud (Workload Identity Federation)
+        uses: google-github-actions/auth@v2
+        with:
+          # Inherits WIF configuration from the caller workflow's secrets
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      # Optional Pre-Build Steps (like generating models)
+      - name: Set up Python (for Make setup if needed)
+        if: ${{ inputs.setup-make-cmd != '' }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Poetry and Make
+        if: ${{ inputs.setup-make-cmd != '' }}
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          sudo apt-get update && sudo apt-get install -y make
+      - name: Generate Prerequisites via Make
+        if: ${{ inputs.setup-make-cmd != '' }}
+        run: |
+          export PATH="/home/runner/.local/bin:$PATH"
+          ${{ inputs.setup-make-cmd }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker "${{ inputs.region }}-docker.pkg.dev" --quiet
+
+      - name: Build Docker image
+        run: |
+          IMAGE="${{ inputs.region }}-docker.pkg.dev/${{ inputs.project-id }}/${{ inputs.repo-name }}/${{ inputs.image-name }}:${{ github.sha }}"
+          docker build -f ${{ inputs.dockerfile-path }} -t "$IMAGE" .
+          docker push "$IMAGE"

@@ -1,0 +1,62 @@
+name: Default Terraform Deploy
+
+on:
+  workflow_call:
+    inputs:
+      project-id:
+        required: true
+        type: string
+        description: "Google Cloud Project ID"
+      region:
+        required: true
+        type: string
+        description: "Google Cloud Region (e.g., europe-west1)"
+      artifact-repo-id:
+        required: true
+        type: string
+        description: "Artifact Registry Repository Name"
+      image-tag:
+        required: true
+        type: string
+        description: "Tag of the image to deploy (usually github.sha)"
+      working-directory:
+        required: false
+        type: string
+        default: "terraform"
+        description: "Path to the Terraform configuration directory"
+
+jobs:
+  deploy-infra:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud (Workload Identity Federation)
+        uses: google-github-actions/auth@v2
+        with:
+          # Inherits WIF configuration from the caller workflow's secrets
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        working-directory: ${{ inputs.working-directory }}
+        run: terraform init
+
+      - name: Terraform Apply
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          terraform apply -auto-approve \
+            -var="project_id=${{ inputs.project-id }}" \
+            -var="region=${{ inputs.region }}" \
+            -var="artifact_repo_id=${{ inputs.artifact-repo-id }}" \
+            -var="image_tag=${{ inputs.image-tag }}"
+
+      - name: Output Cloud Run URL
+        working-directory: ${{ inputs.working-directory }}
+        run: echo "Deployed to $(terraform output -raw cloud_run_url)"
