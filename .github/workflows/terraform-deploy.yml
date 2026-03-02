@@ -71,7 +71,7 @@ jobs:
           # If image-tag is provided, append it, otherwise omit it (assume extra-tf-vars has what we need)
           IMAGE_VAR=""
           if [ -n "${{ inputs.image-tag }}" ]; then
-            IMAGE_VAR="-var=\"image_tag=${{ inputs.image-tag }}\""
+            IMAGE_VAR="-var=image_tag=${{ inputs.image-tag }}"
           fi
           
           terraform apply -auto-approve \

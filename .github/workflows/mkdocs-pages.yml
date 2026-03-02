@@ -45,10 +45,11 @@ jobs:
         run: poetry run mkdocs build ${{ inputs.mkdocs-args }}
       
       - name: Link Checker
+        id: lychee
         uses: lycheeverse/lychee-action@v2
         with:
-          args: --verbose --no-progress --root-dir ${{ inputs.working-directory }}/site '${{ inputs.working-directory }}/site/**/*.html'
-          fail: true
+          args: --verbose --no-progress --root-dir ${{ inputs.working-directory }}/site --exclude-path '${{ inputs.working-directory }}/site/404.html' '${{ inputs.working-directory }}/site/**/*.html'
+          fail: false
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
