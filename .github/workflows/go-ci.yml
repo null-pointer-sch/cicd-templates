@@ -7,6 +7,10 @@ on:
         required: false
         type: string
         default: "1.26"
+      working-directory:
+        required: false
+        type: string
+        default: "."
 
 jobs:
   test:
@@ -19,17 +23,21 @@ jobs:
           go-version: ${{ inputs.go-version }}
           
       - name: Verify Dependencies
+        working-directory: ${{ inputs.working-directory }}
         run: |
           go mod tidy
           git diff --exit-code || (echo "go.mod/go.sum not up to date. Run go mod tidy" && exit 1)
           
       - name: Run Formatting Check
+        working-directory: ${{ inputs.working-directory }}
         run: |
           gofmt -l .
           test -z $(gofmt -l .) || (echo "Some files are not formatted properly. Run gofmt -w ." && exit 1)
           
       - name: Run Vet
+        working-directory: ${{ inputs.working-directory }}
         run: go vet ./...
           
       - name: Run Tests
+        working-directory: ${{ inputs.working-directory }}
         run: go test -v ./...
