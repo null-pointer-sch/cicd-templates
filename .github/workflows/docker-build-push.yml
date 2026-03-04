@@ -25,6 +25,11 @@ on:
         type: string
         default: "Dockerfile"
         description: "Path to the Dockerfile"
+      docker-context:
+        required: false
+        type: string
+        default: "."
+        description: "Docker build context directory"
       setup-make-cmd:
         required: false
         type: string
@@ -77,5 +82,5 @@ jobs:
       - name: Build Docker image
         run: |
           IMAGE="${{ inputs.region }}-docker.pkg.dev/${{ inputs.project-id }}/${{ inputs.repo-name }}/${{ inputs.image-name }}:${{ github.sha }}"
-          docker build -f ${{ inputs.dockerfile-path }} -t "$IMAGE" .
+          docker build -f ${{ inputs.dockerfile-path }} -t "$IMAGE" ${{ inputs.docker-context }}
           docker push "$IMAGE"
