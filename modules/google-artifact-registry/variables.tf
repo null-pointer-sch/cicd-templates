@@ -13,3 +13,15 @@ variable "description" {
   description = "Description for the repository"
   default     = "Docker repository"
 }
+
+variable "readers" {
+  type        = list(string)
+  description = "List of IAM identities to grant roles/artifactregistry.reader"
+  default     = []
+}
+
+variable "writers" {
+  type        = list(string)
+  description = "List of IAM identities to grant roles/artifactregistry.writer"
+  default     = []
+}
