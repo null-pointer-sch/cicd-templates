@@ -49,10 +49,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Authenticate to Google Cloud (Workload Identity Federation)
+      - name: Authenticate to Google Cloud
+        id: auth
         uses: google-github-actions/auth@v2
         with:
-          # Inherits WIF configuration from the caller workflow's secrets
+          token_format: "access_token"
           workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
@@ -76,8 +77,12 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
-      - name: Configure Docker for Artifact Registry
-        run: gcloud auth configure-docker "${{ inputs.region }}-docker.pkg.dev" --quiet
+      - name: Docker Login
+        uses: docker/login-action@v3
+        with:
+          registry: "${{ inputs.region }}-docker.pkg.dev"
+          username: "oauth2pkg"
+          password: "${{ steps.auth.outputs.access_token }}"
 
       - name: Build Docker image
         run: |
