@@ -75,9 +75,9 @@ jobs:
           export PATH="/home/runner/.local/bin:$PATH"
           ${{ inputs.setup-make-cmd }}
 
-      - name: Docker Login
+      - name: Docker Auth
         run: |
-          gcloud auth print-access-token | docker login -u oauth2pkg --password-stdin https://${{ inputs.region }}-docker.pkg.dev
+          gcloud auth configure-docker ${{ inputs.region }}-docker.pkg.dev
 
       - name: Build Docker image
         run: |
