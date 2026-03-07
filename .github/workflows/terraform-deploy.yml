@@ -29,11 +29,6 @@ on:
         type: string
         default: ""
         description: "Additional terraform variables in format: -var=\"key=value\" -var=\"key2=value2\""
-      use-wif:
-        required: false
-        type: boolean
-        default: true
-        description: "Whether to use Workload Identity Federation (set to false to use GCP_CREDENTIALS)"
     secrets:
       GCP_WIF_PROVIDER:
         required: true
@@ -44,9 +39,6 @@ on:
       DATABASE_URL:
         required: false
         description: "Optional Database URL variable passed to Terraform env"
-      GCP_CREDENTIALS:
-        required: false
-        description: "Optional Service Account Key JSON (as an alternative to WIF)"
 
 jobs:
   deploy-infra:
@@ -54,22 +46,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Authenticate to Google Cloud (WIF)
-        if: ${{ inputs.use-wif }}
-        id: auth-wif
+      - name: Authenticate to Google Cloud (Workload Identity Federation)
         uses: google-github-actions/auth@v2
         with:
-          token_format: "access_token"
           workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-
-      - name: Authenticate to Google Cloud (JSON Key)
-        if: ${{ !inputs.use-wif }}
-        id: auth-json
-        uses: google-github-actions/auth@v2
-        with:
-          token_format: "access_token"
-          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
