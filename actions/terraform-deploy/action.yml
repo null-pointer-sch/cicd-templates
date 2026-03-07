@@ -1,0 +1,46 @@
+name: "Terraform Deploy"
+description: "Initializes and applies Terraform configuration"
+
+inputs:
+  project-id:
+    description: "Google Cloud Project ID"
+    required: true
+  region:
+    description: "Google Cloud Region"
+    required: true
+  artifact-repo-id:
+    description: "Artifact Registry Repository Name"
+    required: true
+  image-tag:
+    description: "Tag of the image to deploy"
+    required: true
+  working-directory:
+    description: "Path to the Terraform configuration directory"
+    required: false
+    default: "terraform"
+  database-url:
+    description: "Optional Database URL variable"
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Terraform
+      uses: hashicorp/setup-terraform@v3
+
+    - name: Terraform Init
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: terraform init
+
+    - name: Terraform Apply
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        TF_VAR_database_url: ${{ inputs.database-url }}
+      run: |
+        terraform apply -auto-approve \
+          -var="project_id=${{ inputs.project-id }}" \
+          -var="region=${{ inputs.region }}" \
+          -var="artifact_repo_id=${{ inputs.artifact-repo-id }}" \
+          -var="image_tag=${{ inputs.image-tag }}"
